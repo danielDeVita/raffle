@@ -30,12 +30,20 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false
+      - key: PAYMENTS_PROVIDER
+        value: mercado_pago
+      - key: ALLOW_MOCK_PAYMENTS
+        value: "false"
       - key: MP_ACCESS_TOKEN
         sync: false
-      - key: MP_CLIENT_ID
+      - key: MP_OAUTH_CLIENT_ID
         sync: false
-      - key: MP_CLIENT_SECRET
+      - key: MP_OAUTH_CLIENT_SECRET
         sync: false
+      - key: MP_OAUTH_REDIRECT_URI
+        sync: false
+      - key: MP_PAYOUTS_ENABLED
+        value: "false"
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY

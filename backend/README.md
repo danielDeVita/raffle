@@ -127,6 +127,12 @@ GOOGLE_CLIENT_SECRET="GOCSPX-xxx"
 GOOGLE_CALLBACK_URL="http://localhost:3001/auth/google/callback"
 ```
 
+Mercado Pago setup notes:
+
+- `MP_ACCESS_TOKEN` comes from Mercado Pago Developers -> `Tus integraciones` -> your app -> `Pruebas > Credenciales de prueba` or `Producción > Credenciales de producción`.
+- `MP_OAUTH_CLIENT_ID`, `MP_OAUTH_CLIENT_SECRET`, and `MP_OAUTH_REDIRECT_URI` are only required for seller account connection and live payouts.
+- Real Mercado Pago webhook delivery requires an `HTTPS` `BACKEND_URL`; `http://localhost:3001` works for local app wiring but not for external Mercado Pago webhook callbacks.
+
 If Cloudflare Turnstile is enabled for auth, production should set both backend vars above and the matching frontend vars `NEXT_PUBLIC_TURNSTILE_ENABLED` + `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. The site key is public; `TURNSTILE_SECRET_KEY` must stay backend-only. See the production guide: [docs/turnstile-production.md](../docs/turnstile-production.md).
 
 ### Mock top-ups for local QA

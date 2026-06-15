@@ -10,6 +10,7 @@ import { useMutation } from '@apollo/client/react';
 import { gql } from '@apollo/client/core';
 import { useAuthStore } from '@/store/auth';
 import { EmailVerificationStep } from '@/components/auth/email-verification-step';
+import { PasswordStrengthChecklist } from '@/components/auth/password-strength-checklist';
 import {
   RESEND_VERIFICATION_CODE_MUTATION,
   VERIFY_EMAIL_MUTATION,
@@ -29,6 +30,7 @@ import {
   persistSocialPromotionToken,
 } from '@/lib/social-promotions';
 import { getPublicBackendUrl, isTurnstileEnabled } from '@/lib/public-env';
+import { passwordFieldSchema } from '@/lib/validation/password';
 
 const REGISTER_MUTATION = gql`
   mutation Register($email: String!, $password: String!, $nombre: String!, $apellido: String!, $fechaNacimiento: String!, $acceptTerms: Boolean!, $captchaToken: String) {
@@ -65,12 +67,7 @@ const registerSchema = z.object({
     }
     return age >= 18;
   }, 'Debés ser mayor de 18 años'),
-  password: z
-    .string()
-    .min(8, 'Mínimo 8 caracteres')
-    .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-    .regex(/[a-z]/, 'Debe contener al menos una minúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número'),
+  password: passwordFieldSchema,
   confirmPassword: z.string(),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'Debés aceptar los términos y condiciones',
@@ -217,11 +214,6 @@ function RegisterPageContent() {
     }
   };
 
-  // Password strength indicators
-  const hasMinLength = password.length >= 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasLowercase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
 
   // Verification step UI
@@ -352,12 +344,7 @@ function RegisterPageContent() {
               />
 
               {/* Password strength */}
-              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                <PasswordCheck valid={hasMinLength} text="8+ caracteres" />
-                <PasswordCheck valid={hasUppercase} text="Una mayúscula" />
-                <PasswordCheck valid={hasLowercase} text="Una minúscula" />
-                <PasswordCheck valid={hasNumber} text="Un número" />
-              </div>
+              <PasswordStrengthChecklist password={password} />
             </div>
 
             <div className="space-y-2">
@@ -466,15 +453,6 @@ function RegisterPageContent() {
           </Card>
         </div>
       </div>
-    </div>
-  );
-}
-
-function PasswordCheck({ valid, text }: { valid: boolean; text: string }) {
-  return (
-    <div className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 ${valid ? 'border-success/35 bg-success/10 text-success' : 'border-border/80 bg-background/60 text-muted-foreground'}`}>
-      <Check className={`h-3 w-3 ${valid ? 'opacity-100' : 'opacity-30'}`} />
-      <span>{text}</span>
     </div>
   );
 }

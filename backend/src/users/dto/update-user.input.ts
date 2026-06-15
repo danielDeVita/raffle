@@ -15,6 +15,15 @@ import {
   DocumentType,
   SellerPaymentAccountIdentifierType,
 } from '../../common/enums';
+import {
+  PASSWORD_LOWERCASE_MESSAGE,
+  PASSWORD_LOWERCASE_REGEX,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_NUMBER_MESSAGE,
+  PASSWORD_NUMBER_REGEX,
+  PASSWORD_UPPERCASE_MESSAGE,
+  PASSWORD_UPPERCASE_REGEX,
+} from '../../common/constants/password.constants';
 
 @InputType()
 export class UpdateProfileInput {
@@ -45,10 +54,10 @@ export class ChangePasswordInput {
 
   @Field()
   @IsString()
-  @MinLength(8)
-  @Matches(/[A-Z]/, { message: 'Debe contener al menos una mayúscula' })
-  @Matches(/[a-z]/, { message: 'Debe contener al menos una minúscula' })
-  @Matches(/[0-9]/, { message: 'Debe contener al menos un número' })
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @Matches(PASSWORD_UPPERCASE_REGEX, { message: PASSWORD_UPPERCASE_MESSAGE })
+  @Matches(PASSWORD_LOWERCASE_REGEX, { message: PASSWORD_LOWERCASE_MESSAGE })
+  @Matches(PASSWORD_NUMBER_REGEX, { message: PASSWORD_NUMBER_MESSAGE })
   newPassword!: string;
 }
 

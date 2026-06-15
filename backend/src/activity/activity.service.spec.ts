@@ -116,6 +116,7 @@ describe('ActivityService', () => {
         data: expect.objectContaining({
           userId: 'user-1',
           action: ActivityType.PASSWORD_CHANGED,
+          metadata: { source: 'settings' },
         }),
       });
     });

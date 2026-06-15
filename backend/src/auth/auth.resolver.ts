@@ -1,5 +1,6 @@
 import { Resolver, Mutation, Args, Query, Context } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -9,7 +10,12 @@ import {
   TwoFactorSetupPayload,
   EnableTwoFactorPayload,
 } from './dto/auth-payload';
-import { RegisterInput, LoginInput } from './dto/auth.input';
+import {
+  RegisterInput,
+  LoginInput,
+  RequestPasswordResetInput,
+  ResetPasswordInput,
+} from './dto/auth.input';
 import { User } from '../users/entities/user.entity';
 import { GqlAuthGuard } from './guards/gql-auth.guard';
 import { LoginThrottlerGuard } from '@/common/guards';
@@ -105,6 +111,33 @@ export class AuthResolver {
     @Args('userId') userId: string,
   ): Promise<boolean> {
     return this.authService.resendVerificationCode(userId);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Mutation(() => Boolean)
+  async requestPasswordReset(
+    @Args('input') input: RequestPasswordResetInput,
+    @Context() context: { req: Record<string, unknown>; res: Response },
+  ): Promise<boolean> {
+    const ip = this.extractIp(context.req);
+    return this.authService.requestPasswordReset(input, ip);
+  }
+
+  @Public()
+  @Query(() => Boolean)
+  async isPasswordResetTokenValid(
+    @Args('token') token: string,
+  ): Promise<boolean> {
+    return this.authService.isPasswordResetTokenValid(token);
+  }
+
+  @Public()
+  @Mutation(() => Boolean)
+  async resetPassword(
+    @Args('input') input: ResetPasswordInput,
+  ): Promise<boolean> {
+    return this.authService.resetPassword(input);
   }
 
   @Public()

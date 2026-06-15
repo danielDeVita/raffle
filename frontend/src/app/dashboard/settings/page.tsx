@@ -24,6 +24,7 @@ import { getOptimizedImageUrl, CLOUDINARY_PRESETS } from '@/lib/cloudinary';
 import { TwoFactorSettingsCard } from '@/components/auth/two-factor-settings-card';
 import { OnboardingNudge } from '@/components/onboarding/onboarding-nudge';
 import { getSellerPaymentAccountAuthorizationUrl } from '@/lib/payment-account-connect';
+import { passwordFieldSchema } from '@/lib/validation/password';
 
 // Types
 interface SettingsUserData {
@@ -194,11 +195,7 @@ const profileSchema = z.object({
 
 const passwordSchema = z.object({
   oldPassword: z.string().min(1, 'La contraseña actual es requerida'),
-  newPassword: z.string()
-    .min(8, 'Mínimo 8 caracteres')
-    .regex(/[A-Z]/, 'Al menos una mayúscula')
-    .regex(/[a-z]/, 'Al menos una minúscula')
-    .regex(/[0-9]/, 'Al menos un número'),
+  newPassword: passwordFieldSchema,
 });
 
 const kycSchema = z.object({

@@ -29,6 +29,8 @@ import {
   getKycApprovedContent,
   getKycRejectedContent,
   getNewQuestionNotificationContent,
+  getPasswordResetConfirmationContent,
+  getPasswordResetContent,
   getPaymentWillBeReleasedNotificationContent,
   getPayoutFailedNotificationContent,
   getPromotionBonusGrantIssuedContent,
@@ -234,6 +236,30 @@ export class NotificationsService {
     return this.sendEmail({
       to: email,
       subject: 'Verificá tu email - Código de confirmación',
+      html,
+    });
+  }
+
+  async sendPasswordResetEmail(
+    email: string,
+    data: { userName: string; resetToken: string; expiresInMinutes: number },
+  ) {
+    const html = getPasswordResetContent(data, this.configService);
+    return this.sendEmail({
+      to: email,
+      subject: 'Restablecé tu contraseña',
+      html,
+    });
+  }
+
+  async sendPasswordResetConfirmationEmail(
+    email: string,
+    data: { userName: string },
+  ) {
+    const html = getPasswordResetConfirmationContent(data, this.configService);
+    return this.sendEmail({
+      to: email,
+      subject: 'Tu contraseña fue actualizada',
       html,
     });
   }

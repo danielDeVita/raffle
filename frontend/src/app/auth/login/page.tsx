@@ -421,6 +421,15 @@ export default function LoginPage() {
                   )}
                 </div>
 
+                <div className="flex justify-end">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm font-semibold text-primary hover:underline"
+                  >
+                    Olvidé mi contraseña
+                  </Link>
+                </div>
+
                 <TurnstileField
                   enabled={captchaEnabled}
                   onTokenChange={setCaptchaToken}

@@ -32,6 +32,9 @@ describe('AuthResolver', () => {
     register: jest.fn(),
     verifyEmail: jest.fn(),
     resendVerificationCode: jest.fn(),
+    requestPasswordReset: jest.fn(),
+    isPasswordResetTokenValid: jest.fn(),
+    resetPassword: jest.fn(),
     login: jest.fn(),
     beginTwoFactorSetup: jest.fn(),
     enableTwoFactor: jest.fn(),
@@ -226,6 +229,56 @@ describe('AuthResolver', () => {
       const result = await resolver.resendVerificationCode('user-1');
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('password reset flow', () => {
+    it('should request a password reset using the caller IP and not set cookies', async () => {
+      const input = {
+        email: 'test@example.com',
+        captchaToken: 'captcha-token',
+      };
+      const res = mockResponse();
+      const context = {
+        req: { ip: '192.168.1.99', headers: {} },
+        res,
+      };
+
+      authService.requestPasswordReset.mockResolvedValue(true);
+
+      const result = await resolver.requestPasswordReset(input, context);
+
+      expect(result).toBe(true);
+      expect(authService.requestPasswordReset).toHaveBeenCalledWith(
+        input,
+        '192.168.1.99',
+      );
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+
+    it('should return the validity state for a reset token', async () => {
+      authService.isPasswordResetTokenValid.mockResolvedValue(true);
+
+      const result = await resolver.isPasswordResetTokenValid('reset-token');
+
+      expect(result).toBe(true);
+      expect(authService.isPasswordResetTokenValid).toHaveBeenCalledWith(
+        'reset-token',
+      );
+    });
+
+    it('should reset the password without setting auth cookies', async () => {
+      const input = {
+        token: 'reset-token',
+        newPassword: 'NewPassword123',
+      };
+
+      authService.resetPassword.mockResolvedValue(true);
+
+      const result = await resolver.resetPassword(input);
+
+      expect(result).toBe(true);
+      expect(authService.resetPassword).toHaveBeenCalledWith(input);
     });
   });
 

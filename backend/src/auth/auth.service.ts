@@ -9,7 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterInput, LoginInput } from './dto/auth.input';
+import {
+  RegisterInput,
+  LoginInput,
+  RequestPasswordResetInput,
+  ResetPasswordInput,
+} from './dto/auth.input';
 import { Prisma, User as PrismaUser, UserRole } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ActivityService } from '../activity/activity.service';
@@ -18,16 +23,22 @@ import { SocialPromotionsService } from '../social-promotions/social-promotions.
 import { LoginPayload } from './dto/auth-payload';
 import { TurnstileService } from './turnstile.service';
 import { TwoFactorService } from './two-factor.service';
+import { getPasswordValidationMessage } from '../common/constants/password.constants';
 
 // Token expiration times
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY_DAYS = 7; // 7 days
 const VERIFICATION_CODE_EXPIRY_MINUTES = 15;
+const PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = 30;
+const PASSWORD_RESET_REQUEST_LIMIT_PER_HOUR = 3;
 type RefreshTokenWithUser = Prisma.RefreshTokenGetPayload<{
   include: { user: true };
 }>;
 type RefreshTokenForRevokeAll = Prisma.RefreshTokenGetPayload<{
   select: { id: true; token: true; tokenHash: true };
+}>;
+type PasswordResetTokenWithUser = Prisma.PasswordResetTokenGetPayload<{
+  include: { user: true };
 }>;
 
 @Injectable()
@@ -269,6 +280,139 @@ export class AuthService {
     return true;
   }
 
+  async requestPasswordReset(
+    input: RequestPasswordResetInput,
+    ip?: string,
+  ): Promise<boolean> {
+    await this.turnstileService.assertHuman(
+      input.captchaToken,
+      ip,
+      'password_reset',
+    );
+
+    const normalizedEmail = this.normalizeEmail(input.email);
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: {
+          equals: normalizedEmail,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (!this.isPasswordResetEligibleUser(user)) {
+      return true;
+    }
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentResetRequests = await this.prisma.passwordResetToken.count({
+      where: {
+        userId: user.id,
+        createdAt: { gt: oneHourAgo },
+      },
+    });
+
+    if (recentResetRequests >= PASSWORD_RESET_REQUEST_LIMIT_PER_HOUR) {
+      return true;
+    }
+
+    await this.prisma.passwordResetToken.updateMany({
+      where: {
+        userId: user.id,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: {
+        usedAt: new Date(),
+      },
+    });
+
+    const resetToken = await this.createPasswordResetToken(user.id);
+    const userName = this.getUserDisplayName(user);
+
+    this.runAuthSideEffect(
+      this.notifications.sendPasswordResetEmail(user.email, {
+        userName,
+        resetToken,
+        expiresInMinutes: PASSWORD_RESET_TOKEN_EXPIRY_MINUTES,
+      }),
+      'Failed to send password reset email',
+    );
+
+    return true;
+  }
+
+  async isPasswordResetTokenValid(token: string): Promise<boolean> {
+    if (!token.trim()) {
+      return false;
+    }
+
+    const passwordResetToken = await this.prisma.passwordResetToken.findFirst({
+      where: {
+        tokenHash: this.hashPasswordResetToken(token),
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+    });
+
+    return Boolean(passwordResetToken);
+  }
+
+  async resetPassword(input: ResetPasswordInput): Promise<boolean> {
+    const passwordResetToken = await this.findActivePasswordResetToken(
+      input.token,
+    );
+
+    if (!passwordResetToken) {
+      throw new UnauthorizedException(
+        'El enlace no es válido o expiró. Pedí uno nuevo.',
+      );
+    }
+
+    if (!this.isPasswordResetEligibleUser(passwordResetToken.user)) {
+      throw new UnauthorizedException(
+        'El enlace no es válido o expiró. Pedí uno nuevo.',
+      );
+    }
+
+    this.assertPasswordStrength(input.newPassword);
+
+    const passwordHash = await bcrypt.hash(input.newPassword, 10);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: passwordResetToken.userId },
+        data: { passwordHash },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: passwordResetToken.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    await this.revokeAllUserRefreshTokens(passwordResetToken.userId);
+
+    this.logAuthActivity(
+      this.activityService.logPasswordChanged(
+        passwordResetToken.userId,
+        'reset',
+      ),
+      'Failed to log password reset activity',
+    );
+    this.runAuthSideEffect(
+      this.notifications.sendPasswordResetConfirmationEmail(
+        passwordResetToken.user.email,
+        {
+          userName: this.getUserDisplayName(passwordResetToken.user),
+        },
+      ),
+      'Failed to send password reset confirmation email',
+    );
+
+    return true;
+  }
+
   private generateVerificationCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
@@ -285,6 +429,23 @@ export class AuthService {
         expiresAt,
       },
     });
+  }
+
+  private async createPasswordResetToken(userId: string): Promise<string> {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(
+      Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000,
+    );
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId,
+        tokenHash: this.hashPasswordResetToken(resetToken),
+        expiresAt,
+      },
+    });
+
+    return resetToken;
   }
 
   private async sendWelcomeNotifications(user: {
@@ -893,11 +1054,28 @@ export class AuthService {
     });
   }
 
+  private async findActivePasswordResetToken(
+    token: string,
+  ): Promise<PasswordResetTokenWithUser | null> {
+    return this.prisma.passwordResetToken.findFirst({
+      where: {
+        tokenHash: this.hashPasswordResetToken(token),
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+  }
+
   private hashRefreshToken(refreshTokenValue: string): string {
     return crypto
       .createHash('sha256')
       .update(refreshTokenValue, 'utf8')
       .digest('hex');
+  }
+
+  private hashPasswordResetToken(token: string): string {
+    return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
   }
 
   private async persistRefreshTokenHashIfMissing(
@@ -959,6 +1137,17 @@ export class AuthService {
     return user;
   }
 
+  private isPasswordResetEligibleUser(
+    user: PrismaUser | null | undefined,
+  ): user is PrismaUser & { passwordHash: string } {
+    return Boolean(
+      user &&
+      !user.isDeleted &&
+      user.role !== UserRole.BANNED &&
+      user.passwordHash,
+    );
+  }
+
   private async assertCurrentPassword(
     user: PrismaUser,
     currentPassword: string,
@@ -975,6 +1164,14 @@ export class AuthService {
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException('La contraseña actual es incorrecta.');
+    }
+  }
+
+  private assertPasswordStrength(password: string): void {
+    const validationMessage = getPasswordValidationMessage(password);
+
+    if (validationMessage) {
+      throw new BadRequestException(validationMessage);
     }
   }
 
@@ -1096,6 +1293,10 @@ export class AuthService {
     user: Pick<PrismaUser, 'email' | 'nombre'>,
   ): string {
     return user.nombre?.trim() || user.email.split('@')[0];
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
   }
 
   private async logAuthCaptchaRejectedIfKnownUser(

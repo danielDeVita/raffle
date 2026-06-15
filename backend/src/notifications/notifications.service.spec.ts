@@ -210,6 +210,64 @@ describe('NotificationsService', () => {
       });
     });
 
+    describe('sendPasswordResetEmail', () => {
+      it('should send a reset email with the reset-password URL and CTA', async () => {
+        const sendEmailSpy = getSendEmailSpy().mockResolvedValue(true);
+
+        const result = await service.sendPasswordResetEmail(
+          'test@example.com',
+          {
+            userName: 'Juan',
+            resetToken: 'reset-token',
+            expiresInMinutes: 30,
+          },
+        );
+
+        expect(result).toBe(true);
+        expect(sendEmailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'test@example.com',
+            subject: 'Restablecé tu contraseña',
+            html: expect.stringContaining(
+              '/auth/reset-password?token=reset-token',
+            ),
+          }),
+        );
+        expect(sendEmailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            html: expect.stringContaining('Restablecer contraseña'),
+          }),
+        );
+      });
+    });
+
+    describe('sendPasswordResetConfirmationEmail', () => {
+      it('should send a confirmation email after a password reset', async () => {
+        const sendEmailSpy = getSendEmailSpy().mockResolvedValue(true);
+
+        const result = await service.sendPasswordResetConfirmationEmail(
+          'test@example.com',
+          {
+            userName: 'Juan',
+          },
+        );
+
+        expect(result).toBe(true);
+        expect(sendEmailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'test@example.com',
+            subject: 'Tu contraseña fue actualizada',
+            html: expect.stringContaining('Si no fuiste vos'),
+          }),
+        );
+        expect(sendEmailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            html: expect.stringContaining('/auth/login'),
+          }),
+        );
+      });
+    });
+
     describe('sendTwoFactorEnabledNotification', () => {
       it('should send the 2FA enabled security email with settings CTA', async () => {
         const sendEmailSpy = getSendEmailSpy().mockResolvedValue(true);

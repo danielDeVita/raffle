@@ -185,6 +185,16 @@ describe('LoginPage', () => {
     });
   }
 
+  it('renders the forgot-password link below the login form', () => {
+    setupMutations();
+
+    render(<LoginPage />);
+
+    expect(
+      screen.getByRole('link', { name: /olvidé mi contraseña/i }),
+    ).toHaveAttribute('href', '/auth/forgot-password');
+  });
+
   it('stores auth and redirects on verified login', async () => {
     const { mutationOptions, loginMutate } = setupMutations();
 

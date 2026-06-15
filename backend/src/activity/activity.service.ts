@@ -72,10 +72,14 @@ export class ActivityService {
     });
   }
 
-  async logPasswordChanged(userId: string) {
+  async logPasswordChanged(
+    userId: string,
+    source: 'settings' | 'reset' = 'settings',
+  ) {
     return this.log({
       userId,
       action: ActivityType.PASSWORD_CHANGED,
+      metadata: { source },
     });
   }
 

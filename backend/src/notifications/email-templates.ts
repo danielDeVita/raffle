@@ -203,6 +203,70 @@ export const getEmailVerificationCodeContent = (
   return wrapEmailTemplate(content, configService);
 };
 
+export const getPasswordResetContent = (
+  data: { userName: string; resetToken: string; expiresInMinutes: number },
+  configService: ConfigService,
+) => {
+  const frontendUrl = getFrontendUrl(configService);
+  const resetUrl = `${frontendUrl}/auth/reset-password?token=${encodeURIComponent(data.resetToken)}`;
+  const escapedResetUrl = escapeHtml(resetUrl);
+  const content = `
+    <h2 style="color: #1F2937; font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; margin: 0 0 16px 0;">
+      Restablecé tu contraseña
+    </h2>
+    <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+      Hola ${data.userName}, recibimos un pedido para cambiar la contraseña de tu cuenta.
+    </p>
+    <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+      Usá el botón de abajo o copiá este enlace en tu navegador:
+    </p>
+    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 20px; margin: 24px 0;">
+      <p style="margin: 0; color: #0F172A; font-size: 13px; line-height: 1.7; word-break: break-word;">
+        ${escapedResetUrl}
+      </p>
+    </div>
+    <p style="color: #6B7280; font-size: 14px; margin: 0;">
+      Este enlace expira en <strong style="color: #1F2937;">${data.expiresInMinutes} minutos</strong> y solo se puede usar una vez.
+    </p>
+    <p style="color: #9CA3AF; font-size: 12px; margin: 24px 0 0 0;">
+      Si no solicitaste este cambio, podés ignorar este email.
+    </p>
+  `;
+
+  return wrapEmailTemplate(content, configService, {
+    showButton: true,
+    buttonText: 'Restablecer contraseña',
+    buttonUrl: resetUrl,
+  });
+};
+
+export const getPasswordResetConfirmationContent = (
+  data: { userName: string },
+  configService: ConfigService,
+) => {
+  const frontendUrl = getFrontendUrl(configService);
+  const loginUrl = `${frontendUrl}/auth/login`;
+  const content = `
+    <h2 style="color: #1F2937; font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; margin: 0 0 16px 0;">
+      Tu contraseña fue actualizada
+    </h2>
+    <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+      Hola ${data.userName}, tu contraseña de LUK se cambió correctamente.
+    </p>
+    <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 24px; margin: 24px 0;">
+      <p style="color: #92400E; font-size: 14px; line-height: 1.6; margin: 0;">
+        Si no fuiste vos, te recomendamos volver a iniciar sesión y revisar la seguridad de tu cuenta cuanto antes.
+      </p>
+    </div>
+  `;
+
+  return wrapEmailTemplate(content, configService, {
+    showButton: true,
+    buttonText: 'Iniciar sesión',
+    buttonUrl: loginUrl,
+  });
+};
+
 export const getTwoFactorEnabledContent = (
   data: { userName: string },
   configService: ConfigService,

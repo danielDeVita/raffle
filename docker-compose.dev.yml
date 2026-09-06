@@ -74,7 +74,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - SOCIAL_PROMOTION_ENABLED=true
       - SOCIAL_PROMOTION_BROWSER_ENABLED=true
-      - SOCIAL_PROMOTION_CHECK_CRON=0 */6 * * *
+      - SOCIAL_PROMOTION_CHECK_CRON=0 */12 * * *
       - SOCIAL_PROMOTION_FETCH_TIMEOUT_MS=30000
     env_file:
       - ./backend/.env

@@ -821,13 +821,13 @@ describe('RafflesService', () => {
 
   describe('calculateCommissions', () => {
     it('should calculate fees correctly', () => {
-      // Platform fee: 4%, Stripe fee: 2.9% + $0.30 fixed
+      // Platform fee: 4%, no external provider fee (Mercado Pago payouts are settled separately)
       const totalAmount = 1000;
       const result = service.calculateCommissions(totalAmount);
 
       expect(result.platformFee).toBe(40); // 4%
-      expect(result.stripeFee).toBeGreaterThan(0);
-      expect(result.totalFees).toBe(result.platformFee + result.stripeFee);
+      expect(result.processingFee).toBe(0);
+      expect(result.totalFees).toBe(result.platformFee + result.processingFee);
       expect(result.netAmount).toBe(totalAmount - result.totalFees);
     });
 
@@ -835,7 +835,7 @@ describe('RafflesService', () => {
       const result = service.calculateCommissions(0);
 
       expect(result.platformFee).toBe(0);
-      expect(result.netAmount).toBeLessThanOrEqual(0); // Fixed fee may make it negative
+      expect(result.netAmount).toBe(0);
     });
   });
 

@@ -52,7 +52,6 @@ import {
   getSellerMustRespondDisputeContent,
   getSellerPaymentNotificationContent,
   getSellerTicketPurchasedContent,
-  getStripeConnectSuccessNotificationContent,
   getTicketPurchaseConfirmationContent,
   getWelcomeEmailContent,
   getWinnerNotificationContent,
@@ -666,23 +665,6 @@ export class NotificationsService {
     return this.sendEmail({
       to: email,
       subject: `💰 Reembolso por disputa - ${data.raffleName}`,
-      html,
-    });
-  }
-
-  // ==================== Stripe Connect Notifications ====================
-
-  async sendStripeConnectSuccessNotification(
-    email: string,
-    data: { userName: string },
-  ) {
-    const html = getStripeConnectSuccessNotificationContent(
-      data,
-      this.configService,
-    );
-    return this.sendEmail({
-      to: email,
-      subject: '✅ ¡Cuenta conectada!',
       html,
     });
   }

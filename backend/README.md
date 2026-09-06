@@ -118,7 +118,7 @@ SENTRY_RELEASE=""                 # Git SHA or deploy release id
 # Social promotions
 SOCIAL_PROMOTION_ENABLED="true"
 SOCIAL_PROMOTION_ALLOWED_NETWORKS="facebook,instagram,x"
-SOCIAL_PROMOTION_CHECK_CRON="0 */6 * * *"
+SOCIAL_PROMOTION_CHECK_CRON="0 */12 * * *"
 SOCIAL_PROMOTION_BROWSER_ENABLED="false"   # backend web service
 
 # Google OAuth (optional)

@@ -10,7 +10,6 @@ interface User {
   apellido: string;
   role: 'USER' | 'ADMIN' | 'BANNED';
   avatarUrl?: string;
-  stripeConnectStatus?: string;
 }
 
 interface AuthState {

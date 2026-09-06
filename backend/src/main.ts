@@ -44,7 +44,7 @@ function resolveCorsOrigins(): string[] {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    rawBody: true, // Required for MP/Stripe webhooks signature verification
+    rawBody: true, // Required for Mercado Pago webhooks signature verification
     bufferLogs: true, // Buffer logs until Winston is ready
   });
 
@@ -120,7 +120,6 @@ async function bootstrap() {
     allowedHeaders: [
       'Authorization',
       'Content-Type',
-      'stripe-signature',
       'x-signature',
       'x-request-id',
     ],

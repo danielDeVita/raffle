@@ -291,17 +291,20 @@ Conclusión:
 - el repo hoy está preparado para desarrollo, QA manual y validación local;
 - antes de un deploy productivo real todavía falta formalizar la capa de migraciones versionadas y alinear el arranque de servicios con ese modelo.
 
-## Desalineaciones actuales a corregir antes de prod
+## Estado pre-prod unificado (sin migraciones todavía)
 
-Antes de un deploy real conviene corregir explícitamente estas diferencias:
+Decisión vigente mientras no haya salida a PROD: todo usa `prisma db push`, no hay `backend/prisma/migrations`.
 
-- [`backend/Dockerfile`](../backend/Dockerfile) hoy arranca con `prisma db push`;
-- [`backend/Dockerfile.social-worker`](../backend/Dockerfile.social-worker) hoy arranca con `prisma db push`;
-- [`docker-compose.yml`](../docker-compose.yml) ya asume `prisma migrate deploy`.
+- [`backend/Dockerfile`](../backend/Dockerfile) arranca con `prisma db push --skip-generate`;
+- [`backend/Dockerfile.social-worker`](../backend/Dockerfile.social-worker) arranca con `prisma db push --skip-generate`;
+- [`docker-compose.yml`](../docker-compose.yml) arranca con `prisma db push --skip-generate`;
+- CI usa `prisma db push --skip-generate` sobre PostgreSQL efímero.
 
-Esto debe tratarse como deuda conocida de transición, no como bug inmediato del entorno local.
+Antes del primer deploy productivo real habrá que:
 
-Mientras no exista baseline de migraciones, el repo seguirá mezclando un flujo pre-prod pragmático con artefactos que ya apuntan a producción real.
+- recrear `backend/prisma/migrations` con una baseline desde el schema actual;
+- usar `prisma migrate dev` para cambios futuros;
+- usar `prisma migrate deploy` en un paso controlado de release/deploy (nunca en el `CMD` del contenedor).
 
 ## Qué servicios aprovechan mejor free tier o créditos
 

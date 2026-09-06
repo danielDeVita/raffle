@@ -204,7 +204,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  SOCIAL_PROMOTION_CHECK_CRON: string = '0 */6 * * *';
+  SOCIAL_PROMOTION_CHECK_CRON: string = '0 */12 * * *';
 
   @IsNumber()
   @IsOptional()

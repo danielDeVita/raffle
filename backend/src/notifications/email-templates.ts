@@ -1079,27 +1079,6 @@ export const getRefundDueToDisputeNotificationContent = (
   });
 };
 
-export const getStripeConnectSuccessNotificationContent = (
-  data: { userName: string },
-  configService: ConfigService,
-) => {
-  const frontendUrl = getFrontendUrl(configService);
-  const content = `
-    <h2 style="color: #0F766E; font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; margin: 0 0 16px 0;">¡Cuenta conectada! ✅</h2>
-    <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
-      Hola ${data.userName}, tu cuenta ha sido conectada exitosamente.
-    </p>
-    <p style="color: #4B5563; font-size: 15px; line-height: 1.6;">
-      Ya estás listo para crear rifas y recibir los pagos directamente en tu cuenta. ¡Empezá a vender hoy mismo!
-    </p>
-  `;
-  return wrapEmailTemplate(content, configService, {
-    showButton: true,
-    buttonText: 'Crear mi primera rifa',
-    buttonUrl: `${frontendUrl}/dashboard/create`,
-  });
-};
-
 export const getPriceDropAlertContent = (
   data: {
     raffleName: string;

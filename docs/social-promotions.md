@@ -74,8 +74,8 @@ Responsable de:
 
 Jobs actuales:
 
-- validación periódica de posts debidos: cada `6 horas` por default, configurable con `SOCIAL_PROMOTION_CHECK_CRON`;
-- settlement de posts cerrados: cada `30 minutos`.
+- validación periódica de posts debidos: cada `12 horas` por default, configurable con `SOCIAL_PROMOTION_CHECK_CRON` (el scraping es costoso y con riesgo de rate-limit, por eso no se valida más seguido);
+- settlement de posts cerrados: cada `30 minutos` (sólo DB, sin scraping).
 
 ## Estrategia de validación y monitoreo
 

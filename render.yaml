@@ -94,7 +94,7 @@ services:
       - key: SOCIAL_PROMOTION_BROWSER_ENABLED
         value: "true"
       - key: SOCIAL_PROMOTION_CHECK_CRON
-        value: "0 */6 * * *"
+        value: "0 */12 * * *"
       - key: SOCIAL_PROMOTION_FETCH_TIMEOUT_MS
         value: "30000"
 

@@ -32,7 +32,7 @@ export class SocialPromotionWorkerService {
   /**
    * Validates promotion posts that are due for their next check.
    */
-  @Cron(process.env.SOCIAL_PROMOTION_CHECK_CRON || '0 */6 * * *')
+  @Cron(process.env.SOCIAL_PROMOTION_CHECK_CRON || '0 */12 * * *')
   async processDuePosts() {
     if (!this.enabled) return;
 

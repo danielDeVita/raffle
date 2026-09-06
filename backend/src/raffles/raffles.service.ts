@@ -18,10 +18,6 @@ import { RaffleFiltersInput } from './dto/raffle-filters.input';
 import { RelaunchRaffleInput } from './dto/relaunch-raffle.input';
 import { Prisma, TicketStatus } from '@prisma/client';
 import { RaffleSort } from '../common/enums';
-import {
-  STRIPE_FEE_RATE,
-  STRIPE_FIXED_FEE,
-} from '../common/constants/fees.constants';
 import { getPlatformFeeRate } from '../common/config/platform-fee.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ActivityService } from '../activity/activity.service';
@@ -1382,11 +1378,11 @@ export class RafflesService {
 
   calculateCommissions(totalAmount: number) {
     const platformFee = totalAmount * this.platformFeeRate;
-    const stripeFee = totalAmount * STRIPE_FEE_RATE + STRIPE_FIXED_FEE;
-    const totalFees = platformFee + stripeFee;
+    const processingFee = 0;
+    const totalFees = platformFee + processingFee;
     const netAmount = totalAmount - totalFees;
 
-    return { platformFee, stripeFee, totalFees, netAmount };
+    return { platformFee, processingFee, totalFees, netAmount };
   }
 
   getTicketStats(raffle: RaffleWithTickets) {
